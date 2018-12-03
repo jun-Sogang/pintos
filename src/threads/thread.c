@@ -208,7 +208,15 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-
+  
+  if (t->priority > thread_get_priority())
+    thread_yield();
+  
+  /*
+  for (e; e != list_end(&ready_list); e = list_next(e)) {
+    printf("name : %s\n", list_entry(e, struct thread, elem)->name);
+  }
+*/
   return tid;
 }
 
@@ -311,7 +319,6 @@ thread_yield (void)
 {
   struct thread *cur = thread_current ();
   enum intr_level old_level;
-  
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
@@ -495,8 +502,10 @@ next_thread_to_run (void)
 {
   if (list_empty (&ready_list))
     return idle_thread;
-  else
+  else {
+    list_sort(&ready_list, priorityCompare, NULL);
     return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  }
 }
 
 /* Completes a thread switch by activating the new thread's page
@@ -585,3 +594,7 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+bool priorityCompare (struct list_elem *a, struct list_elem *b, void *aux) {
+  return list_entry(a, struct thread, elem)->priority > list_entry(b, struct thread, elem)->priority;
+}

@@ -30,6 +30,8 @@ static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
+struct list timeQueue;
+
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
@@ -37,6 +39,7 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
+  list_init(&timeQueue);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -92,8 +95,13 @@ timer_sleep (int64_t ticks)
   int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  int old_level = intr_disable();
+  
+  thread_current()->time = start + ticks;
+  list_push_back(&timeQueue, &thread_current()->elem);
+  
+  thread_block();
+  intr_set_level(old_level);
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -171,6 +179,23 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
+  struct list_elem *trav;
+  struct list_elem *nextTrav = NULL;
+  struct thread *now;
+
+  for (trav = list_begin(&timeQueue); trav != list_end(&timeQueue);) {
+    now = list_entry(trav, struct thread, elem);
+    if (now->time <= ticks) {
+      nextTrav = list_next(trav);
+      list_remove(trav);
+      thread_unblock(now);
+      trav = nextTrav;
+    }
+    else {
+      trav = list_next(trav);
+    }
+  }
+
   thread_tick ();
 }
 
