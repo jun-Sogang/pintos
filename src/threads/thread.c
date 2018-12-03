@@ -54,6 +54,10 @@ static long long user_ticks;    /* # of timer ticks in user programs. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 
+#ifdef USERPROG
+bool thread_prior_aging;
+#endif
+
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
@@ -137,6 +141,8 @@ thread_tick (void)
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
+  if (thread_prior_aging == true)
+    thread_aging();
 }
 
 /* Prints thread statistics. */
@@ -350,7 +356,13 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  if (thread_current ()->priority > new_priority) {
+    thread_current()->priority = new_priority;
+    thread_yield();
+  }
+  else {
+    thread_current()->priority = new_priority;
+  }
 }
 
 /* Returns the current thread's priority. */
