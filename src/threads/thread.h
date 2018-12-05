@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include "threads/synch.h"
 
-#ifdef USERPROG
+#ifndef USERPROG
 extern bool thread_prior_aging;
 #endif
 
@@ -104,6 +104,8 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 #endif
     int time;
+    int nice;
+    int recent_cpu;
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
@@ -146,4 +148,15 @@ int thread_get_load_avg (void);
 
 // 20121622 
 bool priorityCompare (struct list_elem *a, struct list_elem *b, void *aux);
+void update_every_sec();
+void update_four_ticks();
+
+int add_x_y(int x, int y);
+int substract_x_y(int x, int y);
+int add_x_n(int x, int n);
+int substract_x_y(int x, int y);
+int multiply_x_y(int x, int y);
+int multiply_x_y(int x, int n);
+int divide_x_y(int x, int y);
+int divide_x_n(int x, int n);
 #endif /* threads/thread.h */

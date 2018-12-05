@@ -195,7 +195,24 @@ timer_interrupt (struct intr_frame *args UNUSED)
       trav = list_next(trav);
     }
   }
+/*  if (thread_prior_aging == true || thread_mlfqs == true) {
+   // printf("thread_name : %s\n", thread_name());
 
+    // recent_cpu += 1
+    if (strcmp(thread_name(), "idle")) {
+      //printf("B recent_cpu : %d\n", thread_current()->recent_cpu / (1<<14));
+      thread_current()->recent_cpu = add_x_n(thread_current()->recent_cpu, 1);
+      //printf("A recent_cpu : %d\n", thread_current()->recent_cpu / (1<<14));
+    }
+    if (timer_ticks() % TIMER_FREQ == 0) {
+      update_every_sec();
+    }
+    if (timer_ticks() % 4 == 0) {
+      update_four_ticks();
+    }
+    //printf("%s : %d\n", thread_name(), thread_current()->priority);
+      
+  }*/
   thread_tick ();
 }
 
